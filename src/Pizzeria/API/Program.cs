@@ -1,14 +1,10 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
+using Pizzeria.API.Endpoints;
 using Pizzeria.Dominio.Interfaces;
 using Pizzeria.Persistencia.Repos;
 using Pizzeria.Servicios.Interface;
 using Pizzeria.Servicios.Service;
-using Pizzeria.Servicios.Background;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -23,9 +19,6 @@ builder.Services.AddScoped<IPedidoService, PedidoService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<IPizzaService, PizzaService>();
 
-// Background queue and simulator
-builder.Services.AddSingleton<IPedidoProcessingQueue, PedidoProcessingQueue>();
-builder.Services.AddHostedService<PedidoStateSimulator>();
 
 var app = builder.Build();
 
@@ -37,9 +30,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseRouting();
-app.UseAuthorization();
-
-app.MapControllers();
+app.MapPizzaEndpoints();
+app.MapClienteEndpoints();
+app.MapPedidoEndpoints();
 
 app.Run();
