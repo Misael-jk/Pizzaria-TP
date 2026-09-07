@@ -1,3 +1,12 @@
+// INSTRUCCIONES DE TRASLADO:
+// Este controlador depende de IPedidoService y de los DTOs CrearPedidoDto (API) y CrearPedidoRequest (Servicios).
+// Pasos para mover:
+// 1) Añade referencia al proyecto Servicios: dotnet add reference ../Servicios/Servicios.csproj
+// 2) Asegura que el nuevo proyecto incluya la carpeta src/Pizzeria/API/DTO/ con CrearPedidoDto y DetalleDto o que los copies al nuevo proyecto.
+// 3) Registra en Program.cs: builder.Services.AddScoped<IPedidoService, PedidoService>();
+// 4) Ajusta el namespace a Pizzeria.API.Controllers o el que uses en el proyecto receptor.
+// 5) Compila y prueba las rutas: POST /api/pedidos, GET /api/pedidos/{id}.
+
 using Microsoft.AspNetCore.Mvc;
 using Pizzeria.API.DTO;
 using Pizzeria.Servicios.DTOs;
