@@ -1,4 +1,7 @@
-﻿namespace Pizzeria.API.DTO;
+using System.ComponentModel.DataAnnotations;
+
+namespace Pizzeria.API.DTO;
+
 public class DetalleDto
 {
     public int IdPizza { get; set; }

@@ -1,3 +1,5 @@
+using Pizzeria.Servicios.DTOs;
+
 namespace Pizzeria.Servicios.DTOs;
 
 public class DetalleRequest

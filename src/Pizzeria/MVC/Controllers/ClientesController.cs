@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Pizzeria.API.DTO;
 using Pizzeria.Dominio.Entidades;
 using Pizzeria.Servicios.Interface;
 
@@ -16,10 +17,17 @@ public class ClientesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Crear([FromBody] Cliente cliente)
+    public async Task<IActionResult> Crear([FromBody] CrearClienteDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
+
+        var cliente = new Cliente
+        {
+            Nombre = dto.Nombre,
+            Telefono = dto.Telefono,
+            Direccion = dto.Direccion
+        };
 
         try
         {
@@ -35,7 +43,7 @@ public class ClientesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> Obtener(int id)
     {
-        var cliente = await _clienteService.ObtenerClienteAsync(id);
+        var cliente = await _cliente_service.ObtenerClienteAsync(id);
         return cliente is not null ? Ok(cliente) : NotFound("Cliente no encontrado.");
     }
 }

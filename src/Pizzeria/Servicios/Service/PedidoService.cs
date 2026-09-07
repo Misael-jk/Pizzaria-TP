@@ -4,7 +4,7 @@ using Pizzeria.Dominio.Enums;
 using Pizzeria.Dominio.Interfaces;
 using Pizzeria.Servicios.DTOs;
 using Pizzeria.Servicios.Interface;
-using Pizzeria.Servicios.Background;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Pizzeria.Servicios.Service;
 
@@ -12,18 +12,18 @@ public class PedidoService : IPedidoService
 {
     private readonly IPedidoRepository _pedidoRepository;
     private readonly IPizzaRepository _pizzaRepository;
-    private readonly IPedidoProcessingQueue _queue;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<PedidoService> _logger;
 
     public PedidoService(
         IPedidoRepository pedidoRepository,
         IPizzaRepository pizzaRepository,
-        IPedidoProcessingQueue queue,
+        IServiceScopeFactory scopeFactory,
         ILogger<PedidoService> logger)
     {
         _pedidoRepository = pedidoRepository;
         _pizzaRepository = pizzaRepository;
-        _queue = queue;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -76,8 +76,8 @@ public class PedidoService : IPedidoService
 
         _logger.LogInformation($"[NUEVO] Pedido {idGenerado} registrado con éxito.");
 
-        // Encolar para simulación en background
-        await _queue.EnqueueAsync(idGenerado);
+        // Simulación en background (encapsulada, usando scope para resolver un nuevo IPedidoService)
+        _ = Task.Run(async () => await CicloEstadosPedidoAsync(idGenerado));
 
         return idGenerado;
     }
@@ -87,7 +87,7 @@ public class PedidoService : IPedidoService
 
     public async Task CambiarEstadoPedidoAsync(int idPedido, EstadoPedido nuevoEstado)
     {
-        var pedido = await _pedido_repository.ObtenerPorIdAsync(idPedido);
+        var pedido = await _pedidoRepository.ObtenerPorIdAsync(idPedido);
 
         if (pedido == null)
             throw new KeyNotFoundException($"El pedido {idPedido} no existe.");
@@ -115,5 +115,35 @@ public class PedidoService : IPedidoService
         await _pedidoRepository.ActualizarEstadoAsync(idPedido, pedido.Estado);
 
         _logger.LogInformation($"[ESTADO] Pedido {idPedido} pasó a {pedido.Estado}.");
+    }
+
+    private async Task CicloEstadosPedidoAsync(int idPedido)
+    {
+        try
+        {
+            // Crear un scope para obtener una instancia segura de IPedidoService
+            using var scope = _scopeFactory.CreateScope();
+            var pedidoService = scope.ServiceProvider.GetRequiredService<IPedidoService>();
+
+            // COCINA: Tomando el pedido
+            await Task.Delay(5000);
+            await pedidoService.CambiarEstadoPedidoAsync(idPedido, EstadoPedido.EnPreparacion);
+
+            // HORNO: Cocinando
+            await Task.Delay(10000);
+            await pedidoService.CambiarEstadoPedidoAsync(idPedido, EstadoPedido.Listo);
+
+            // REPARTO: En camino
+            await Task.Delay(5000);
+            await pedidoService.CambiarEstadoPedidoAsync(idPedido, EstadoPedido.EnViaje);
+
+            // ENTREGA: Finalizado
+            await Task.Delay(12000);
+            await pedidoService.CambiarEstadoPedidoAsync(idPedido, EstadoPedido.Entregado);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"[SIMULACIÓN] Falló la simulación del pedido {idPedido}");
+        }
     }
 }
